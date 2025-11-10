@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Tracking Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .stat {
+            text-align: center;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 8px;
+            flex: 1;
+            margin: 0 10px;
+        }
+        .stat h2 {
+            margin: 0;
+            color: #333;
+        }
+        .stat p {
+            margin: 5px 0 0;
+            color: #666;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        canvas {
+            max-width: 100%;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>Donation Tracking Dashboard</h1>
+        <div class="stats">
+            <div class="stat">
+                <h2 id="total-donations">$0</h2>
+                <p>Total Donations Received</p>
+            </div>
+            <div class="stat">
+                <h2 id="num-donors">0</h2>
+                <p>Number of Donors</p>
+            </div>
+        </div>
+        <h2>Donation Trends</h2>
+        <canvas id="donationChart"></canvas>
+        <h2>Recent Donations</h2>
+        <table id="donation-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Donor</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Donations will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Dummy data
+        const donations = [
+            { date: '2023-01-01', donor: 'Alice', amount: 100 },
+            { date: '2023-01-05', donor: 'Bob', amount: 50 },
+            { date: '2023-01-10', donor: 'Charlie', amount: 200 },
+            { date: '2023-01-15', donor: 'Alice', amount: 75 },
+            { date: '2023-01-20', donor: 'Diana', amount: 150 },
+            { date: '2023-01-25', donor: 'Bob', amount: 25 },
+            { date: '2023-02-01', donor: 'Eve', amount: 300 },
+            { date: '2023-02-05', donor: 'Alice', amount: 100 },
+            { date: '2023-02-10', donor: 'Frank', amount: 50 },
+            { date: '2023-02-15', donor: 'Diana', amount: 200 }
+        ];
+
+        // Calculate total donations
+        const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
+        document.getElementById('total-donations').textContent = `$${totalDonations}`;
+
+        // Calculate number of unique donors
+        const uniqueDonors = new Set(donations.map(d => d.donor)).size;
+        document.getElementById('num-donors').textContent = uniqueDonors;
+
+        // Populate table
+        const tableBody = document.querySelector('#donation-table tbody');
+        donations.forEach(donation => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${donation.date}</td>
+                <td>${donation.donor}</td>
+                <td>$${donation.amount}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        // Prepare data for chart (cumulative donations over time)
+        const sortedDonations = donations.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const labels = [];
+        const data = [];
+        let cumulative = 0;
+        sortedDonations.forEach(donation => {
+            cumulative += donation.amount;
+            labels.push(donation.date);
+            data.push(cumulative);
+        });
+
+        // Create chart
+        const ctx = document.getElementById('donationChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cumulative Donations',
+                    data: data,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
