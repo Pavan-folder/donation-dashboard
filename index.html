@@ -10,6 +10,11 @@
             font-family: Arial, sans-serif;
             margin: 20px;
             background-color: #f4f4f4;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.dark-mode {
+            background-color: #333;
+            color: #fff;
         }
         .dashboard {
             max-width: 1200px;
@@ -18,6 +23,27 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+        body.dark-mode .dashboard {
+            background: #444;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .toggle-btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .toggle-btn:hover {
+            background: #0056b3;
         }
         .stats {
             display: flex;
@@ -31,27 +57,92 @@
             border-radius: 8px;
             flex: 1;
             margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+        body.dark-mode .stat {
+            background: #555;
         }
         .stat h2 {
             margin: 0;
             color: #333;
         }
+        body.dark-mode .stat h2 {
+            color: #fff;
+        }
         .stat p {
             margin: 5px 0 0;
             color: #666;
+        }
+        body.dark-mode .stat p {
+            color: #ccc;
+        }
+        .form-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        body.dark-mode .form-section {
+            background: #555;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+        .filter-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        body.dark-mode .filter-section {
+            background: #555;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+        body.dark-mode table {
+            background: #444;
         }
         th, td {
             padding: 10px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
+        body.dark-mode th, body.dark-mode td {
+            border-bottom: 1px solid #666;
+        }
         th {
             background-color: #f2f2f2;
+        }
+        body.dark-mode th {
+            background-color: #666;
         }
         canvas {
             max-width: 100%;
@@ -61,7 +152,10 @@
 </head>
 <body>
     <div class="dashboard">
-        <h1>Donation Tracking Dashboard</h1>
+        <div class="header">
+            <h1>Donation Tracking Dashboard</h1>
+            <button class="toggle-btn" id="dark-mode-toggle">Toggle Dark Mode</button>
+        </div>
         <div class="stats">
             <div class="stat">
                 <h2 id="total-donations">$0</h2>
@@ -72,9 +166,45 @@
                 <p>Number of Donors</p>
             </div>
         </div>
+        <div class="form-section">
+            <h2>Add New Donation</h2>
+            <div class="form-group">
+                <label for="donor-name">Donor Name:</label>
+                <input type="text" id="donor-name" placeholder="Enter donor name">
+            </div>
+            <div class="form-group">
+                <label for="donation-amount">Amount:</label>
+                <input type="number" id="donation-amount" placeholder="Enter amount">
+            </div>
+            <div class="form-group">
+                <label for="donation-date">Date:</label>
+                <input type="date" id="donation-date">
+            </div>
+            <button class="btn" id="add-donation-btn">Add Donation</button>
+            <button class="btn" id="export-csv-btn">Export to CSV</button>
+        </div>
+        <div class="filter-section">
+            <h2>Filter Donations</h2>
+            <div class="form-group">
+                <label for="filter-donor">Filter by Donor:</label>
+                <input type="text" id="filter-donor" placeholder="Enter donor name">
+            </div>
+            <div class="form-group">
+                <label for="filter-start-date">Start Date:</label>
+                <input type="date" id="filter-start-date">
+            </div>
+            <div class="form-group">
+                <label for="filter-end-date">End Date:</label>
+                <input type="date" id="filter-end-date">
+            </div>
+            <button class="btn" id="apply-filter-btn">Apply Filter</button>
+            <button class="btn" id="clear-filter-btn">Clear Filter</button>
+        </div>
         <h2>Donation Trends</h2>
         <canvas id="donationChart"></canvas>
-        <h2>Recent Donations</h2>
+        <h2>Monthly Donation Totals</h2>
+        <canvas id="monthlyChart"></canvas>
+        <h2>Donations</h2>
         <table id="donation-table">
             <thead>
                 <tr>
@@ -91,7 +221,7 @@
 
     <script>
         // Dummy data
-        const donations = [
+        let donations = [
             { date: '2023-01-01', donor: 'Alice', amount: 100 },
             { date: '2023-01-05', donor: 'Bob', amount: 50 },
             { date: '2023-01-10', donor: 'Charlie', amount: 200 },
@@ -104,59 +234,164 @@
             { date: '2023-02-15', donor: 'Diana', amount: 200 }
         ];
 
-        // Calculate total donations
-        const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
-        document.getElementById('total-donations').textContent = `$${totalDonations}`;
+        let donationChart, monthlyChart;
 
-        // Calculate number of unique donors
-        const uniqueDonors = new Set(donations.map(d => d.donor)).size;
-        document.getElementById('num-donors').textContent = uniqueDonors;
+        function updateDashboard(filteredDonations = donations) {
+            // Calculate total donations
+            const totalDonations = filteredDonations.reduce((sum, d) => sum + d.amount, 0);
+            document.getElementById('total-donations').textContent = `$${totalDonations}`;
 
-        // Populate table
-        const tableBody = document.querySelector('#donation-table tbody');
-        donations.forEach(donation => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${donation.date}</td>
-                <td>${donation.donor}</td>
-                <td>$${donation.amount}</td>
-            `;
-            tableBody.appendChild(row);
-        });
+            // Calculate number of unique donors
+            const uniqueDonors = new Set(filteredDonations.map(d => d.donor)).size;
+            document.getElementById('num-donors').textContent = uniqueDonors;
 
-        // Prepare data for chart (cumulative donations over time)
-        const sortedDonations = donations.sort((a, b) => new Date(a.date) - new Date(b.date));
-        const labels = [];
-        const data = [];
-        let cumulative = 0;
-        sortedDonations.forEach(donation => {
-            cumulative += donation.amount;
-            labels.push(donation.date);
-            data.push(cumulative);
-        });
+            // Populate table
+            const tableBody = document.querySelector('#donation-table tbody');
+            tableBody.innerHTML = '';
+            filteredDonations.forEach(donation => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${donation.date}</td>
+                    <td>${donation.donor}</td>
+                    <td>$${donation.amount}</td>
+                `;
+                tableBody.appendChild(row);
+            });
 
-        // Create chart
-        const ctx = document.getElementById('donationChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Cumulative Donations',
-                    data: data,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: true,
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
+            // Update line chart (cumulative donations over time)
+            const sortedDonations = filteredDonations.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const labels = [];
+            const data = [];
+            let cumulative = 0;
+            sortedDonations.forEach(donation => {
+                cumulative += donation.amount;
+                labels.push(donation.date);
+                data.push(cumulative);
+            });
+
+            if (donationChart) donationChart.destroy();
+            const ctx = document.getElementById('donationChart').getContext('2d');
+            donationChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Cumulative Donations',
+                        data: data,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
+            });
+
+            // Update bar chart (monthly totals)
+            const monthlyTotals = {};
+            filteredDonations.forEach(donation => {
+                const month = donation.date.substring(0, 7); // YYYY-MM
+                monthlyTotals[month] = (monthlyTotals[month] || 0) + donation.amount;
+            });
+            const monthlyLabels = Object.keys(monthlyTotals).sort();
+            const monthlyData = monthlyLabels.map(month => monthlyTotals[month]);
+
+            if (monthlyChart) monthlyChart.destroy();
+            const ctx2 = document.getElementById('monthlyChart').getContext('2d');
+            monthlyChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: [{
+                        label: 'Monthly Donations',
+                        data: monthlyData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initial load
+        updateDashboard();
+
+        // Dark mode toggle
+        document.getElementById('dark-mode-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+
+        // Add donation
+        document.getElementById('add-donation-btn').addEventListener('click', () => {
+            const donor = document.getElementById('donor-name').value.trim();
+            const amount = parseFloat(document.getElementById('donation-amount').value);
+            const date = document.getElementById('donation-date').value;
+
+            if (donor && amount > 0 && date) {
+                donations.push({ date, donor, amount });
+                updateDashboard();
+                // Clear form
+                document.getElementById('donor-name').value = '';
+                document.getElementById('donation-amount').value = '';
+                document.getElementById('donation-date').value = '';
+            } else {
+                alert('Please fill in all fields correctly.');
             }
+        });
+
+        // Export to CSV
+        document.getElementById('export-csv-btn').addEventListener('click', () => {
+            const csvContent = 'data:text/csv;charset=utf-8,' +
+                'Date,Donor,Amount\n' +
+                donations.map(d => `${d.date},${d.donor},${d.amount}`).join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'donations.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // Apply filter
+        document.getElementById('apply-filter-btn').addEventListener('click', () => {
+            const filterDonor = document.getElementById('filter-donor').value.toLowerCase();
+            const startDate = document.getElementById('filter-start-date').value;
+            const endDate = document.getElementById('filter-end-date').value;
+
+            let filtered = donations;
+            if (filterDonor) {
+                filtered = filtered.filter(d => d.donor.toLowerCase().includes(filterDonor));
+            }
+            if (startDate) {
+                filtered = filtered.filter(d => d.date >= startDate);
+            }
+            if (endDate) {
+                filtered = filtered.filter(d => d.date <= endDate);
+            }
+            updateDashboard(filtered);
+        });
+
+        // Clear filter
+        document.getElementById('clear-filter-btn').addEventListener('click', () => {
+            document.getElementById('filter-donor').value = '';
+            document.getElementById('filter-start-date').value = '';
+            document.getElementById('filter-end-date').value = '';
+            updateDashboard();
         });
     </script>
 </body>
